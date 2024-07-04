@@ -19,99 +19,36 @@ converse = Converse(
     thought="",
 )
 
-think_response = ""
-converse_response = ""
+history = []
 
 def main():
-    global think_response
-    global converse_response
-    global converse
+    global history
+
     # enter a name upon starting to simulate some auth flow
-    name = input("Enter your name: ")
+    user_input = input("Enter your name: ")
 
     # get_or_create a user
-    user = honcho.apps.users.get_or_create(app_id=app.id, name=name)
+    # user = honcho.apps.users.get_or_create(app_id=app.id, name=user_input)
 
-    # create session
-    session = honcho.apps.users.sessions.create(
-        app_id=app.id,
-        user_id=user.id,
-        location_id="cli",
-    )
+    # # create session
+    # session = honcho.apps.users.sessions.create(
+    #     app_id=app.id,
+    #     user_id=user.id,
+    #     location_id="cli",
+    # )
 
-    # one time name roast
-    print("Thought:")
-    think.name = name
-    think.history = []
-    response = think.stream()
-    for chunk in response:
-        think_response += chunk.content
-        print(chunk.content, end="", flush=True)
-    print("\n")
+    history += [
+        {"role": "user", "content": user_input}
+    ]
 
+    think.history = history
+    converse.history = history
 
-    print("Response:")
-    converse.name = name
-    converse.history = []
-    converse.thought = think_response
-    response = converse.stream()
-    for chunk in response:
-        converse_response += chunk.content
-        print(chunk.content, end="", flush=True)
-    print("\n")
-
-    # write to honcho
-    honcho.apps.users.sessions.messages.create(
-        app_id=app.id,
-        session_id=session.id,
-        user_id=user.id,
-        content=converse_response,
-        is_user=False
-    )
-    message = honcho.apps.users.sessions.messages.create(
-        app_id=app.id,
-        session_id=session.id,
-        user_id=user.id,
-        content=name,
-        is_user=True
-    )
-    honcho.apps.users.sessions.metamessages.create(
-        app_id=app.id,
-        session_id=session.id,
-        user_id=user.id,
-        content=think_response,
-        metamessage_type="thought",
-        message_id=message.id
-    )
+    think_response = ""
+    converse_response = ""
 
     # conversation loop
     while True:
-
-        user_input = input(">>> ")
-
-        history_iter = honcho.apps.users.sessions.messages.list(
-            app_id=app.id, session_id=session.id, user_id=user.id
-        )
-
-        think.history = []
-        converse.history = []
-
-        for message in history_iter:
-            if message.is_user:
-                think.history += [
-                    {"role": "user", "content": message.content}
-                ]
-                converse.history += [
-                    {"role": "user", "content": message.content}
-                ]
-            else:
-                think.history += [
-                    {"role": "assistant", "content": message.content}
-                ]
-                converse.history += [
-                    {"role": "assistant", "content": message.content}
-                ]
-
 
         response = think.stream()
         print("Thought:")
@@ -127,37 +64,41 @@ def main():
             converse_response += chunk.content
         print("\n")
 
-        # write as message
-        honcho.apps.users.sessions.messages.create(
-            app_id=app.id,
-            session_id=session.id,
-            user_id=user.id,
-            content=name,
-            is_user=True,
-        )
+        user_input = input(">>> ")
 
-        message = honcho.apps.users.sessions.messages.create(
-            app_id=app.id,
-            session_id=session.id,
-            user_id=user.id,
-            content=converse_response,
-            is_user=False,
-        )
+        history += [
+            {"role": "assistant", "content": converse_response}
+        ]
+        history += [
+            {"role": "user", "content": user_input}
+        ]
 
-        # write as metamessage associated to that message
-        honcho.apps.users.sessions.metamessages.create(
-            app_id=app.id,
-            session_id=session.id,
-            user_id=user.id,
-            message_id=message.id,
-            metamessage_type="thought",
-            content=think_response,
-        )
+        # # write as message
+        # honcho.apps.users.sessions.messages.create(
+        #     app_id=app.id,
+        #     session_id=session.id,
+        #     user_id=user.id,
+        #     content=user_input,
+        #     is_user=True,
+        # )
 
+        # message = honcho.apps.users.sessions.messages.create(
+        #     app_id=app.id,
+        #     session_id=session.id,
+        #     user_id=user.id,
+        #     content=converse_response,
+        #     is_user=False,
+        # )
 
-
-
-
+        # # write as metamessage associated to that message
+        # honcho.apps.users.sessions.metamessages.create(
+        #     app_id=app.id,
+        #     session_id=session.id,
+        #     user_id=user.id,
+        #     message_id=message.id,
+        #     metamessage_type="thought",
+        #     content=think_response,
+        # )
 
 
 if __name__ == "__main__":
