@@ -15,3 +15,13 @@ poetry shell
 ```
 
 Then it's a simple `python main.py` to run the app.
+
+## Environment Variables
+
+There are several secrets and environment variables necessary for running this
+application. 
+
+```.env
+HONCHO_API_KEY=test # Just set to test to use the demo server
+ANTHROPIC_API_KEY=<API Key from Anthropic>
+```

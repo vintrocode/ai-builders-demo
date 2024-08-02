@@ -6,7 +6,7 @@ from honcho import Honcho
 load_dotenv()
 
 # honcho client
-honcho = Honcho()  # defaults to local
+honcho = Honcho()  # defaults to demo
 app = honcho.apps.get_or_create("ai-builders-demo")
 
 think = Think(
@@ -26,6 +26,7 @@ summarize = Summarize(
 
 history = []
 
+
 def main():
     global history
 
@@ -40,12 +41,10 @@ def main():
     session = honcho.apps.users.sessions.create(
         app_id=app.id,
         user_id=user.id,
-        location_id="cli",
+        # location_id="cli",
     )
 
-    history += [
-        {"role": "user", "content": user_input}
-    ]
+    history += [{"role": "user", "content": user_input}]
 
     think.history = history
     converse.history = history
@@ -55,7 +54,6 @@ def main():
 
     # conversation loop
     while True:
-
         response = think.stream()
         print("Thought:")
         for chunk in response:
@@ -72,12 +70,8 @@ def main():
 
         user_input = input(">>> ")
 
-        history += [
-            {"role": "assistant", "content": converse_response}
-        ]
-        history += [
-            {"role": "user", "content": user_input}
-        ]
+        history += [{"role": "assistant", "content": converse_response}]
+        history += [{"role": "user", "content": user_input}]
 
         # write as message
         message = honcho.apps.users.sessions.messages.create(
@@ -105,7 +99,7 @@ def main():
             content=think_response,
         )
 
-        if user_input == 'exit':
+        if user_input == "exit":
             get_summary(name, session.id)
             sys.exit()
 
@@ -121,9 +115,7 @@ def get_summary(name: str, session_id: str):
     # get_or_create a user
     user = honcho.apps.users.get_or_create(app_id=app.id, name=name)
     session = honcho.apps.users.sessions.get(
-        app_id=app.id,
-        user_id=user.id,
-        session_id=session_id
+        app_id=app.id, user_id=user.id, session_id=session_id
     )
     history_iter = honcho.apps.users.sessions.messages.list(
         app_id=app.id, session_id=session.id, user_id=user.id
@@ -144,10 +136,10 @@ def get_summary(name: str, session_id: str):
 
     print("Dialectic API Response")
     answer = honcho.apps.users.sessions.chat(
-        session_id, 
-        user_id=user.id, 
-        app_id=app.id, 
-        query="What do we know about the user?"
+        session_id,
+        user_id=user.id,
+        app_id=app.id,
+        query="What do we know about the user?",
     )
     print(answer.content)
 
